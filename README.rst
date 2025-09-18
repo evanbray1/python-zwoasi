@@ -1,4 +1,3 @@
-
 python-zwoasi
 =============
 
@@ -15,7 +14,7 @@ Quickstart
 1. **Install dependencies:**
 	- Requires the ZWO ASI SDK (download from ZWO website)
 	- Python 3.6+
-	- `numpy`, `Pillow` (for image saving)
+	- `numpy`, `Pillow`, `astropy`
 
 2. **Install python-zwoasi:**
 	::
@@ -27,17 +26,15 @@ Quickstart
 4. **Basic usage:**
 	::
 		import zwoasi as asi
-		asi.init('/path/to/ASICamera2.dll')
+		asi.init() 
 		cameras = asi.list_cameras()
 		if not cameras:
 			 raise RuntimeError('No cameras found')
 		camera = asi.Camera(0)
 		img = camera.capture()
 
-5. **See `examples/zwoasi_feature_demo.py` for a full demo.**
-	- The demo now saves all captured images as FITS files using `astropy.io.fits` (not PNG/JPG).
-	- The variable name for image arrays is `image` throughout (not `img`).
-	- You must install `astropy` to run the demo: `pip install astropy`.
+5. **See `examples/zwoasi_feature_demo.py` for a demo of fundamental camera operations.**
+	- For example, how to connect to the camera, change the image type, and change common parameters like exposure length.
 
 Directory Structure
 -------------------
@@ -50,9 +47,9 @@ Directory Structure
 
 Troubleshooting
 ---------------
-- Make sure the ZWO ASI SDK library is accessible and matches your OS/architecture.
+- Make sure the ZWO ASI SDK library is accessible.
 - If you get errors about missing DLL/SO/DYLIB, check the `ZWO_ASI_LIB` path.
-- For more details, see the upstream [camera_zwo_asi](https://github.com/MPI-IS/camera_zwo_asi) or ZWO's official documentation.
+- For more details, see ZWO's official documentation.
 
 License
 -------
