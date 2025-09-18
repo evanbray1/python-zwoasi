@@ -8,11 +8,11 @@ conditions specifically from the SDK C library are indicated by errors of type :
 import ctypes as c
 from ctypes.util import find_library
 import logging
+import os
 import numpy as np
 import sys
 import time
 import traceback
-import logging
 
 __author__ = 'Steve Marple'
 __version__ = '0.2.0'
@@ -20,11 +20,31 @@ __license__ = 'MIT'
 
 
 def get_num_cameras():
-    """Retrieves the number of ZWO ASI cameras that are connected. Type :class:`int`."""
+    """
+    Retrieves the number of ZWO ASI cameras that are connected.
+
+    Returns
+    -------
+    int
+        Number of connected cameras.
+    """
     return zwolib.ASIGetNumOfConnectedCameras()
 
 
 def _get_camera_property(id_):
+    """
+    Get camera property dictionary for a given camera ID.
+
+    Parameters
+    ----------
+    id_ : int
+        Camera index.
+
+    Returns
+    -------
+    dict
+        Dictionary of camera properties.
+    """
     prop = _ASI_CAMERA_INFO()
     r = zwolib.ASIGetCameraProperty(prop, id_)
     if r:
@@ -33,6 +53,14 @@ def _get_camera_property(id_):
 
 
 def _open_camera(id_):
+    """
+    Open the camera with the given ID.
+
+    Parameters
+    ----------
+    id_ : int
+        Camera index.
+    """
     r = zwolib.ASIOpenCamera(id_)
     if r:
         raise zwo_errors[r]
@@ -40,13 +68,29 @@ def _open_camera(id_):
 
 
 def _init_camera(id_):
+    """
+    Initialize the camera with the given ID.
+
+    Parameters
+    ----------
+    id_ : int
+        Camera index.
+    """
     r = zwolib.ASIInitCamera(id_)
     if r:
         raise zwo_errors[r]
     return
-   
+
 
 def _close_camera(id_):
+    """
+    Close the camera with the given ID.
+
+    Parameters
+    ----------
+    id_ : int
+        Camera index.
+    """
     r = zwolib.ASICloseCamera(id_)
     if r:
         raise zwo_errors[r]
@@ -54,6 +98,19 @@ def _close_camera(id_):
 
 
 def _get_num_controls(id_):
+    """
+    Get the number of controls for a camera.
+
+    Parameters
+    ----------
+    id_ : int
+        Camera index.
+
+    Returns
+    -------
+    int
+        Number of controls.
+    """
     num = c.c_int()
     r = zwolib.ASIGetNumOfControls(id_, num)
     if r:
@@ -62,6 +119,21 @@ def _get_num_controls(id_):
 
 
 def _get_control_caps(id_, control_index):
+    """
+    Get control capabilities for a given control index.
+
+    Parameters
+    ----------
+    id_ : int
+        Camera index.
+    control_index : int
+        Control index.
+
+    Returns
+    -------
+    dict
+        Dictionary of control capabilities.
+    """
     caps = _ASI_CONTROL_CAPS()
     r = zwolib.ASIGetControlCaps(id_, control_index, caps)
     if r:
@@ -70,6 +142,21 @@ def _get_control_caps(id_, control_index):
 
 
 def _get_control_value(id_, control_type):
+    """
+    Get the value and auto status of a control.
+
+    Parameters
+    ----------
+    id_ : int
+        Camera index.
+    control_type : int
+        Control type constant.
+
+    Returns
+    -------
+    list
+        [value, auto_mode]
+    """
     value = c.c_long()
     auto = c.c_int()
     r = zwolib.ASIGetControlValue(id_, control_type, value, auto)
@@ -79,6 +166,20 @@ def _get_control_value(id_, control_type):
 
 
 def _set_control_value(id_, control_type, value, auto):
+    """
+    Set the value and auto status of a control.
+
+    Parameters
+    ----------
+    id_ : int
+        Camera index.
+    control_type : int
+        Control type constant.
+    value : int
+        Value to set.
+    auto : bool
+        Enable auto mode if True.
+    """
     r = zwolib.ASISetControlValue(id_, control_type, value, auto)
     if r:
         raise zwo_errors[r]
@@ -86,6 +187,19 @@ def _set_control_value(id_, control_type, value, auto):
 
 
 def _get_roi_format(id_):
+    """
+    Get the current ROI (region of interest) format.
+
+    Parameters
+    ----------
+    id_ : int
+        Camera index.
+
+    Returns
+    -------
+    list
+        [width, height, bins, image_type]
+    """
     roi_width = c.c_int()
     roi_height = c.c_int()
     bins = c.c_int()
@@ -97,6 +211,22 @@ def _get_roi_format(id_):
 
 
 def _set_roi_format(id_, width, height, bins, image_type):
+    """
+    Set the ROI (region of interest) format.
+
+    Parameters
+    ----------
+    id_ : int
+        Camera index.
+    width : int
+        ROI width.
+    height : int
+        ROI height.
+    bins : int
+        Pixel binning.
+    image_type : int
+        Image type constant.
+    """
     cam_info = _get_camera_property(id_)
 
     if width < 8:
@@ -114,8 +244,9 @@ def _set_roi_format(id_, width, height, bins, image_type):
         raise ValueError('ROI height must be multiple of 2')
 
     if cam_info['Name'] in ['ZWO ASI120MM', 'ZWO ASI120MC'] and (width * height) % 1024 != 0:
-        raise ValueError('ROI width * height must be multiple of 1024 for ' +
-                         cam_info['Name'])
+        raise ValueError(
+            'ROI width * height must be multiple of 1024 for ' + cam_info['Name']
+        )
     r = zwolib.ASISetROIFormat(id_, width, height, bins, image_type)
     if r:
         raise zwo_errors[r]
@@ -123,6 +254,19 @@ def _set_roi_format(id_, width, height, bins, image_type):
 
 
 def _get_start_position(id_):
+    """
+    Get the start position (x, y) of the ROI.
+
+    Parameters
+    ----------
+    id_ : int
+        Camera index.
+
+    Returns
+    -------
+    list
+        [start_x, start_y]
+    """
     start_x = c.c_int()
     start_y = c.c_int()
     r = zwolib.ASIGetStartPos(id_, start_x, start_y)
@@ -132,6 +276,18 @@ def _get_start_position(id_):
 
 
 def _set_start_position(id_, start_x, start_y):
+    """
+    Set the start position (x, y) of the ROI.
+
+    Parameters
+    ----------
+    id_ : int
+        Camera index.
+    start_x : int
+        X start position.
+    start_y : int
+        Y start position.
+    """
     if start_x < 0:
         raise ValueError('X start position too small')
     if start_y < 0:
@@ -144,14 +300,37 @@ def _set_start_position(id_, start_x, start_y):
 
 
 def _get_dropped_frames(id_):
+    """
+    Get the number of dropped frames.
+
+    Parameters
+    ----------
+    id_ : int
+        Camera index.
+
+    Returns
+    -------
+    int
+        Number of dropped frames.
+    """
     dropped_frames = c.c_int()
     r = zwolib.ASIGetDroppedFrames(id_, dropped_frames)
     if r:
         raise zwo_errors[r]
     return dropped_frames.value
 
-    
+
 def _enable_dark_subtract(id_, filename):
+    """
+    Enable dark frame subtraction using a file.
+
+    Parameters
+    ----------
+    id_ : int
+        Camera index.
+    filename : str
+        Path to dark frame file.
+    """
     r = zwolib.ASIEnableDarkSubtract(id_, filename)
     if r:
         raise zwo_errors[r]
@@ -159,20 +338,44 @@ def _enable_dark_subtract(id_, filename):
 
 
 def _disable_dark_subtract(id_):
+    """
+    Disable dark frame subtraction.
+
+    Parameters
+    ----------
+    id_ : int
+        Camera index.
+    """
     r = zwolib.ASIDisableDarkSubtract(id_)
     if r:
         raise zwo_errors[r]
     return
-    
+
 
 def _start_video_capture(id_):
+    """
+    Start video capture mode.
+
+    Parameters
+    ----------
+    id_ : int
+        Camera index.
+    """
     r = zwolib.ASIStartVideoCapture(id_)
     if r:
         raise zwo_errors[r]
     return
-    
+
 
 def _stop_video_capture(id_):
+    """
+    Stop video capture mode.
+
+    Parameters
+    ----------
+    id_ : int
+        Camera index.
+    """
     r = zwolib.ASIStopVideoCapture(id_)
     if r:
         raise zwo_errors[r]
@@ -180,6 +383,23 @@ def _stop_video_capture(id_):
 
 
 def _get_video_data(id_, timeout, buffer_=None):
+    """
+    Get a single video frame.
+
+    Parameters
+    ----------
+    id_ : int
+        Camera index.
+    timeout : int
+        Timeout in milliseconds.
+    buffer_ : bytearray, optional
+        Buffer to store image data.
+
+    Returns
+    -------
+    bytearray
+        Image data.
+    """
     if buffer_ is None:
         whbi = _get_roi_format(id_)
         sz = whbi[0] * whbi[1]
@@ -192,17 +412,27 @@ def _get_video_data(id_, timeout, buffer_=None):
         if not isinstance(buffer_, bytearray):
             raise TypeError('Supplied buffer must be a bytearray')
         sz = len(buffer_)
-    
+
     cbuf_type = c.c_char * len(buffer_)
     cbuf = cbuf_type.from_buffer(buffer_)
     r = zwolib.ASIGetVideoData(id_, cbuf, sz, int(timeout))
-    
+
     if r:
         raise zwo_errors[r]
     return buffer_
 
 
 def _pulse_guide_on(id_, direction):
+    """
+    Turn on pulse guide in a given direction.
+
+    Parameters
+    ----------
+    id_ : int
+        Camera index.
+    direction : int
+        Guide direction constant.
+    """
     r = zwolib.ASIPulseGuideOn(id_, direction)
     if r:
         raise zwo_errors[r]
@@ -210,6 +440,16 @@ def _pulse_guide_on(id_, direction):
 
 
 def _pulse_guide_off(id_, direction):
+    """
+    Turn off pulse guide in a given direction.
+
+    Parameters
+    ----------
+    id_ : int
+        Camera index.
+    direction : int
+        Guide direction constant.
+    """
     r = zwolib.ASIPulseGuideOff(id_, direction)
     if r:
         raise zwo_errors[r]
@@ -217,6 +457,16 @@ def _pulse_guide_off(id_, direction):
 
 
 def _start_exposure(id_, is_dark):
+    """
+    Start an exposure.
+
+    Parameters
+    ----------
+    id_ : int
+        Camera index.
+    is_dark : bool
+        If True, take a dark frame.
+    """
     r = zwolib.ASIStartExposure(id_, is_dark)
     if r:
         raise zwo_errors[r]
@@ -224,6 +474,14 @@ def _start_exposure(id_, is_dark):
 
 
 def _stop_exposure(id_):
+    """
+    Stop an exposure.
+
+    Parameters
+    ----------
+    id_ : int
+        Camera index.
+    """
     r = zwolib.ASIStopExposure(id_)
     if r:
         raise zwo_errors[r]
@@ -231,6 +489,19 @@ def _stop_exposure(id_):
 
 
 def _get_exposure_status(id_):
+    """
+    Get the current exposure status.
+
+    Parameters
+    ----------
+    id_ : int
+        Camera index.
+
+    Returns
+    -------
+    int
+        Exposure status constant.
+    """
     status = c.c_int()
     r = zwolib.ASIGetExpStatus(id_, status)
     if r:
@@ -239,6 +510,21 @@ def _get_exposure_status(id_):
 
 
 def _get_data_after_exposure(id_, buffer_=None):
+    """
+    Get image data after exposure.
+
+    Parameters
+    ----------
+    id_ : int
+        Camera index.
+    buffer_ : bytearray, optional
+        Buffer to store image data.
+
+    Returns
+    -------
+    bytearray
+        Image data.
+    """
     if buffer_ is None:
         whbi = _get_roi_format(id_)
         sz = whbi[0] * whbi[1]
@@ -251,17 +537,30 @@ def _get_data_after_exposure(id_, buffer_=None):
         if not isinstance(buffer_, bytearray):
             raise TypeError('Supplied buffer must be a bytearray')
         sz = len(buffer_)
-    
+
     cbuf_type = c.c_char * len(buffer_)
     cbuf = cbuf_type.from_buffer(buffer_)
     r = zwolib.ASIGetDataAfterExp(id_, cbuf, sz)
-    
+
     if r:
         raise zwo_errors[r]
     return buffer_
 
 
 def _get_id(id_):
+    """
+    Get the camera ID string.
+
+    Parameters
+    ----------
+    id_ : int
+        Camera index.
+
+    Returns
+    -------
+    str
+        Camera ID string.
+    """
     id2 = _ASI_ID()
     r = zwolib.ASIGetID(id_, id2)
     if r:
@@ -270,6 +569,16 @@ def _get_id(id_):
 
 
 def _set_id(id_, new_id):
+    """
+    Set the camera ID string.
+
+    Parameters
+    ----------
+    id_ : int
+        Camera index.
+    new_id : str
+        New camera ID string.
+    """
     id2 = _ASI_ID(new_id.encode())
     r = zwolib.ASISetID(id_, id2)
     if r:
@@ -277,6 +586,19 @@ def _set_id(id_, new_id):
 
 
 def _get_gain_offset(id_):
+    """
+    Get gain/offset values for the camera.
+
+    Parameters
+    ----------
+    id_ : int
+        Camera index.
+
+    Returns
+    -------
+    list
+        [offset_highest_DR, offset_unity_gain, gain_lowest_RN, offset_lowest_RN]
+    """
     offset_highest_DR = c.c_int()
     offset_unity_gain = c.c_int()
     gain_lowest_RN = c.c_int()
@@ -290,6 +612,21 @@ def _get_gain_offset(id_):
 
 
 def _get_trigger_output_io_conf(id_, pin):
+    """
+    Get trigger output IO configuration.
+
+    Parameters
+    ----------
+    id_ : int
+        Camera index.
+    pin : int
+        Pin number.
+
+    Returns
+    -------
+    list
+        [bPinHigh, lDelay, lDuration]
+    """
     bPinHigh = c.c_int()
     lDelay = c.c_long()
     lDuration = c.c_long()
@@ -301,6 +638,22 @@ def _get_trigger_output_io_conf(id_, pin):
 
 
 def _set_trigger_output_io_conf(id_, pin, bPinHigh, lDelay, lDuration):
+    """
+    Set trigger output IO configuration.
+
+    Parameters
+    ----------
+    id_ : int
+        Camera index.
+    pin : int
+        Pin number.
+    bPinHigh : int
+        Pin high value.
+    lDelay : int
+        Delay in ms.
+    lDuration : int
+        Duration in ms.
+    """
     r = zwolib.ASISetTriggerOutputIOConf(id_, pin, bPinHigh, lDelay, lDuration)
 
     if r:
@@ -309,6 +662,19 @@ def _set_trigger_output_io_conf(id_, pin, bPinHigh, lDelay, lDuration):
 
 
 def _get_camera_support_mode(id_):
+    """
+    Get supported camera modes.
+
+    Parameters
+    ----------
+    id_ : int
+        Camera index.
+
+    Returns
+    -------
+    dict
+        Supported camera modes.
+    """
     mode = _ASI_SUPPORTED_MODE()
 
     r = zwolib.ASIGetCameraSupportMode(id_, mode)
@@ -318,6 +684,19 @@ def _get_camera_support_mode(id_):
 
 
 def _get_camera_mode(id_):
+    """
+    Get current camera mode.
+
+    Parameters
+    ----------
+    id_ : int
+        Camera index.
+
+    Returns
+    -------
+    int
+        Camera mode constant.
+    """
     mode = c.c_int()
     r = zwolib.ASIGetCameraMode(id_, mode)
     if r:
@@ -326,6 +705,16 @@ def _get_camera_mode(id_):
 
 
 def _set_camera_mode(id_, mode):
+    """
+    Set camera mode.
+
+    Parameters
+    ----------
+    id_ : int
+        Camera index.
+    mode : int
+        Camera mode constant.
+    """
     r = zwolib.ASISetCameraMode(id_, mode)
     if r:
         raise zwo_errors[r]
@@ -333,11 +722,20 @@ def _set_camera_mode(id_, mode):
 
 
 def _send_soft_trigger(id_, bStart):
+    """
+    Send a software trigger to the camera.
+
+    Parameters
+    ----------
+    id_ : int
+        Camera index.
+    bStart : int
+        Trigger start value.
+    """
     r = zwolib.ASISendSoftTrigger(id_, bStart)
     if r:
         raise zwo_errors[r]
     return
-
 
 
 def list_cameras():
@@ -405,7 +803,7 @@ class Camera(object):
             logger.error('could not open camera ' + str(id_))
             logger.debug(traceback.format_exc())
             raise
-            
+
     def __del__(self):
         self.close()
 
@@ -415,7 +813,7 @@ class Camera(object):
         if r:
             raise zwo_errors[r]
         return serial.get_serial_number()
-            
+
     def get_camera_property(self):
         return _get_camera_property(self.id)
 
@@ -440,7 +838,7 @@ class Camera(object):
 
     def get_roi_start_position(self):
         return _get_start_position(self.id)
-        
+
     def set_roi_start_position(self, start_x, start_y):
         _set_start_position(self.id, start_x, start_y)
 
@@ -464,7 +862,7 @@ class Camera(object):
 
     def get_trigger_output_io_conf(self, pin):
         return _get_trigger_output_io_conf(self.id, pin)
-         
+
     def close(self):
         """Close the camera in the ASI library.
 
@@ -506,7 +904,7 @@ class Camera(object):
 
         if image_type is None:
             image_type = whbi[3]
-            
+
         if width is None:
             width = int(cam_info['MaxWidth'] / bins)
             width -= width % 8  # Must be a multiple of 8
@@ -532,7 +930,7 @@ class Camera(object):
 
     def set_control_value(self, control_type, value, auto=False):
         _set_control_value(self.id, control_type, value, auto)
-    
+
     def get_bin(self):
         """Retrieves the pixel binning. Type :class:`int`.
 
@@ -545,7 +943,7 @@ class Camera(object):
 
     def stop_exposure(self):
         _stop_exposure(self.id)
-        
+
     def get_exposure_status(self):
         return _get_exposure_status(self.id)
 
@@ -557,13 +955,13 @@ class Camera(object):
 
     def disable_dark_subtract(self):
         _disable_dark_subtract(self.id)
-        
+
     def start_video_capture(self):
         """Enable video capture mode.
 
         Retrieve video frames with :func:`capture_video_frame()`."""
         return _start_video_capture(self.id)
-    
+
     def stop_video_capture(self):
         """Leave video capture mode."""
         return _stop_video_capture(self.id)
@@ -580,7 +978,7 @@ class Camera(object):
     def pulse_guide_on(self, direction):
         _pulse_guide_on(self.id, direction)
         return
-    
+
     def pulse_guide_off(self, direction):
         _pulse_guide_off(self.id, direction)
         return
@@ -614,7 +1012,7 @@ class Camera(object):
         status = self.get_exposure_status()
         if status != ASI_EXP_SUCCESS:
             raise ZWO_CaptureError('Could not capture image', status)
-        
+
         data = self.get_data_after_exposure(buffer_)
         whbi = self.get_roi_format()
         shape = [whbi[1], whbi[0]]
@@ -630,14 +1028,11 @@ class Camera(object):
         img = img.reshape(shape)
 
         if filename is not None:
-            from PIL import Image
-            mode = None
-            if len(img.shape) == 3:
-                img = img[:, :, ::-1]  # Convert BGR to RGB
-            if whbi[3] == ASI_IMG_RAW16:
-                mode = 'I;16'
-            image = Image.fromarray(img, mode=mode)
-            image.save(filename)
+            try:
+                from astropy.io import fits
+            except ImportError:
+                raise ImportError('astropy is required to save images as FITS files.')
+            fits.writeto(filename, img, overwrite=True)
             logger.debug('wrote %s', filename)
         return img
 
@@ -664,14 +1059,11 @@ class Camera(object):
         img = img.reshape(shape)
 
         if filename is not None:
-            from PIL import Image
-            mode = None
-            if len(img.shape) == 3:
-                img = img[:, :, ::-1]  # Convert BGR to RGB
-            if whbi[3] == ASI_IMG_RAW16:
-                mode = 'I;16'
-            image = Image.fromarray(img, mode=mode)
-            image.save(filename)
+            try:
+                from astropy.io import fits
+            except ImportError:
+                raise ImportError('astropy is required to save images as FITS files.')
+            fits.writeto(filename, img, overwrite=True)
             logger.debug('wrote %s', filename)
 
         return img
@@ -722,7 +1114,7 @@ class _ASI_CAMERA_INFO(c.Structure):
 
         ('Unused', c.c_char * 16)
     ]
-    
+
     def get_dict(self):
         r = {}
         for k, _ in self._fields_:
@@ -731,7 +1123,7 @@ class _ASI_CAMERA_INFO(c.Structure):
                 v = v.decode()
             r[k] = v
         del r['Unused']
-        
+
         r['SupportedBins'] = []
         for i in range(len(self.SupportedBins)):
             if self.SupportedBins[i]:
@@ -761,7 +1153,7 @@ class _ASI_CONTROL_CAPS(c.Structure):
         ('IsWritable', c.c_int),
         ('ControlType', c.c_int),
         ('Unused', c.c_char * 32),
-        ]
+    ]
 
     def get_dict(self):
         r = {}
@@ -791,7 +1183,6 @@ class _ASI_SN(c.Structure):
 
     def get_serial_number(self):
         return '{:016x}'.format(int.from_bytes(self.sn, byteorder='big'))
-        
 
 
 class _ASI_SUPPORTED_MODE(c.Structure):
@@ -807,10 +1198,19 @@ def init(library_file=None):
     global zwolib
 
     if zwolib is not None:
-        return # Library already initialized. do nothing
+        # Library already initialized. do nothing
+        return
 
     if library_file is None:
-        library_file = find_library('ASICamera2')
+        # First try to find the library in the package directory
+        module_path = os.path.dirname(os.path.abspath(__file__))
+        lib_path = os.path.join(module_path, 'lib', 'ASICamera2.dll')
+        
+        if os.path.isfile(lib_path):
+            library_file = lib_path
+        else:
+            # Fall back to system-wide search
+            library_file = find_library('ASICamera2')
 
     if library_file is None:
         raise ZWO_Error('ASI SDK library not found')
@@ -914,7 +1314,6 @@ def init(library_file=None):
     zwolib.ASISetID.argtypes = [c.c_int, _ASI_ID]
     zwolib.ASISetID.restype = c.c_int
 
-
     zwolib.ASIGetGainOffset.argtypes = [c.c_int,
                                         c.POINTER(c.c_int),
                                         c.POINTER(c.c_int),
@@ -947,7 +1346,6 @@ def init(library_file=None):
                                                  c.POINTER(c.c_long),
                                                  c.POINTER(c.c_long)]
     zwolib.ASIGetTriggerOutputIOConf.restype = c.c_int
-
 
 
 logger = logging.getLogger(__name__)
@@ -1040,6 +1438,6 @@ zwo_errors = [None,
 
 zwolib = None
 try:
-    init() # Initialize library on import, will only run once.
+    init()  # Initialize library on import, will only run once.
 except ZWO_Error as e:
     logging.warning(str(e))
