@@ -8,7 +8,7 @@ Demonstrates basic camera control with minimal overhead.
 import zwoasi as asi
 import matplotlib.pyplot as plt
 from matplotlib import use
-use('TkAgg')  # Might need to be changed depending on your system
+use('TkAgg')  # Set an interactive backend. Might need to be changed depending on your system
 
 # Initialize SDK
 asi.init()

@@ -1,20 +1,22 @@
 python-zwoasi
 =============
 
-Python bindings for the ZWO ASI v2 camera SDK, enabling control and image capture from ZWO USB cameras.
+Python wrapper for the ZWO ASI v2 camera SDK, enabling control and image capture from ZWO USB cameras.
 
 Features
 --------
-- Enumerate, initialize, and control ZWO ASI cameras from Python
-- Capture images and video, adjust camera parameters (exposure, gain, gamma, ROI, etc.)
 - Simple, object-oriented API
+- Capture images and video, adjust common parameters (exposure, gain, gamma, ROI, etc.)
+- Clear documentation and step-by-step basic/advanced demos.
+- Advanced features such as video mode, auto-exposure, and buffer optimization. 
 
 Quickstart
 ----------
 1. **Install dependencies:**
-	- Requires the ZWO ASI SDK (download from ZWO website)
+	- Requires the ZWO ASI SDK 
+		- Windows x64 is included here and attempts to be used automatically. Other operating systems must download and install from ZWO's website
 	- Python 3.6+
-	- `numpy`, `Pillow`, `astropy`
+	- Common modules such as `numpy`, `Pillow`, `astropy`
 
 2. **Install python-zwoasi:**
 	::
@@ -33,8 +35,9 @@ Quickstart
 		camera = asi.Camera(0)
 		img = camera.capture()
 
-5. **See `examples/zwoasi_feature_demo.py` for a demo of fundamental camera operations.**
-	- For example, how to connect to the camera, change the image type, and change common parameters like exposure length.
+5. **Try the example scripts:**
+	- `examples/demo_basic.py` - Minimal example showing most commonly-used features
+	- `examples/demo_advanced.py` - Advanced features such as video mode, binning, auto-exposure, and detailed parameter inspection
 
 Directory Structure
 -------------------
@@ -48,7 +51,8 @@ Directory Structure
 Troubleshooting
 ---------------
 - Make sure the ZWO ASI SDK library is accessible.
-- If you get errors about missing DLL/SO/DYLIB, check the `ZWO_ASI_LIB` path.
+- If you get errors about missing DLL/SO/DYLIB, check the `ZWO_ASI_LIB` path for your system.
+- For matplotlib issues, try changing the backend at the top of the the demo scripts.
 - For more details, see ZWO's official documentation.
 
 License

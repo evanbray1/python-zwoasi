@@ -14,7 +14,7 @@ import matplotlib.pyplot as plt
 import time
 import zwoasi as asi
 from matplotlib import use
-use('TkAgg')  # Might need to be changed depending on your system
+use('TkAgg')  # Set an interactive backend. Might need to be changed depending on your system
 
 # ==============================================================================
 # CAMERA INITIALIZATION AND DETAILED SPECIFICATIONS
