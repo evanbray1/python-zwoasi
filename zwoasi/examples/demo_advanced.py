@@ -5,6 +5,7 @@ This script demonstrates:
 - Printing detailed camera specifications  
 - Changing gamma, binning, brightness, and image modes (MONO8 vs MONO16)
 - Using video mode and demonstrating its advantages
+- Auto-exposure functionality and comparison with manual exposure
 - Capturing and plotting before/after images for each change (side-by-side with colorbars)
 
 Run this script from an IDE. Requires the ZWO ASI SDK shared library and a connected camera.
@@ -15,6 +16,8 @@ import os
 import sys
 import matplotlib.pyplot as plt
 import time
+from matplotlib import use
+use('TkAgg')  # Might need to be changed depending on your system
 
 # Since this demo file is located within the repository itself, we have a try statement to determine 
 # how to import the zwoasi module.
@@ -39,7 +42,9 @@ if SDK_PATH is None:
 
 asi.init(SDK_PATH)
 
-# %% Camera Initialization and Detailed Specifications
+# ==============================================================================
+# CAMERA INITIALIZATION AND DETAILED SPECIFICATIONS
+# ==============================================================================
 
 # Close any existing plots
 plt.close('all')
@@ -50,9 +55,7 @@ if not cameras:
     raise RuntimeError('No ZWO ASI cameras found.')
 else:
     print(f'Found {len(cameras)} camera(s): {cameras}')
-
-camera_id = 0
-camera = asi.Camera(camera_id)
+camera = asi.Camera(0)
 
 # Set the camera to RAW16 mode initially
 camera.set_image_type(asi.ASI_IMG_RAW16)
@@ -74,24 +77,43 @@ for parameter, ctrl in controls.items():
     for key, value in ctrl.items():
         print(f'    {key}: {value}')
 
-# %% Store Original Settings
+# ==============================================================================
+# DEFAULT CAMERA SETTINGS (MODIFY AS NEEDED)
+# ==============================================================================
 
-# Get current camera control values
-orig_exposure = camera.get_control_value(controls['Exposure']['ControlType'])[0]
-orig_gain = camera.get_control_value(controls['Gain']['ControlType'])[0]
+# Set default exposure and gain values for consistent demo behavior
+# Modify these values based on your camera and lighting conditions
+DEFAULT_EXPOSURE = 320  # microseconds
+DEFAULT_GAIN = 0        # gain value
+
+print('\nSetting default camera parameters for demo...')
+print(f'  Setting exposure to: {DEFAULT_EXPOSURE} μs')
+print(f'  Setting gain to: {DEFAULT_GAIN}')
+
+# Apply default settings
+camera.set_control_value(asi.ASI_EXPOSURE, DEFAULT_EXPOSURE)
+camera.set_control_value(asi.ASI_GAIN, DEFAULT_GAIN)
+
+# ==============================================================================
+# STORE ORIGINAL SETTINGS
+# ==============================================================================
+
+# Get current camera control values using direct constants
+orig_exposure = camera.get_control_value(asi.ASI_EXPOSURE)[0]
+orig_gain = camera.get_control_value(asi.ASI_GAIN)[0]
 orig_roi = camera.get_roi()
 
 # Check if gamma control is available
 has_gamma = 'Gamma' in controls
 if has_gamma:
-    orig_gamma = camera.get_control_value(controls['Gamma']['ControlType'])[0]
+    orig_gamma = camera.get_control_value(asi.ASI_GAMMA)[0]
 
 # Check if brightness control is available  
 has_brightness = 'Brightness' in controls
 if has_brightness:
-    orig_brightness = camera.get_control_value(controls['Brightness']['ControlType'])[0]
+    orig_brightness = camera.get_control_value(asi.ASI_BRIGHTNESS)[0]
 
-print(f'\nOriginal Settings:')
+print('\nOriginal Settings:')
 print(f'  Exposure: {orig_exposure}')
 print(f'  Gain: {orig_gain}')
 if has_gamma:
@@ -101,7 +123,9 @@ if has_brightness:
 print(f'  ROI: {orig_roi}')
 print(f'  Current binning: {camera.get_bin()}')
 
-# %% Gamma Demonstration
+# ==============================================================================
+# GAMMA DEMONSTRATION
+# ==============================================================================
 
 if has_gamma:
     print('\n' + '=' * 30)
@@ -114,11 +138,11 @@ if has_gamma:
     # Change gamma
     print(f'Original gamma: {orig_gamma}')
     new_gamma = min(orig_gamma + 20, controls['Gamma']['MaxValue'])
-    camera.set_control_value(controls['Gamma']['ControlType'], new_gamma)
+    camera.set_control_value(asi.ASI_GAMMA, new_gamma)
     image_gamma = camera.capture()
 
     # Restore original gamma
-    camera.set_control_value(controls['Gamma']['ControlType'], orig_gamma)
+    camera.set_control_value(asi.ASI_GAMMA, orig_gamma)
 
     # Plot before/after for gamma
     fig, axes = plt.subplots(1, 2, figsize=(12, 5))
@@ -126,19 +150,19 @@ if has_gamma:
     axes[0].set_title(f'Original Gamma: {orig_gamma}')
     axes[0].axis('off')
     plt.colorbar(im0, ax=axes[0], fraction=0.046, pad=0.04)
-
     im1 = axes[1].imshow(image_gamma, cmap='gray')
     axes[1].set_title(f'Increased Gamma: {new_gamma}')
     axes[1].axis('off')
     plt.colorbar(im1, ax=axes[1], fraction=0.046, pad=0.04)
-
     plt.suptitle('Effects of Changing Gamma', fontsize=14)
     fig.tight_layout()
     plt.show(block=False)
 else:
     print('\nGamma control not available on this camera. Skipping gamma demo.')
 
-# %% Binning Demonstration
+# ==============================================================================
+# BINNING DEMONSTRATION
+# ==============================================================================
 
 print('\n' + '=' * 30)
 print('BINNING DEMONSTRATION')
@@ -154,34 +178,33 @@ if len(supported_bins) > 1:
     image_no_bin = camera.capture()
     print(f'Captured image with binning=1, size: {image_no_bin.shape}')
 
-    # Capture with binning 2 (if supported)
-    if 2 in supported_bins:
-        camera.set_roi(bins=2)
-        image_bin2 = camera.capture()
-        print(f'Captured image with binning=2, size: {image_bin2.shape}')
+    # Capture with the next supported binning mode
+    camera.set_roi(bins=supported_bins[1])  # Set to second supported binning mode
+    image_bin = camera.capture()
+    print(f'Captured image with binning=2, size: {image_bin.shape}')
 
-        # Plot before/after for binning
-        fig, axes = plt.subplots(1, 2, figsize=(12, 5))
-        im0 = axes[0].imshow(image_no_bin, cmap='gray')
-        axes[0].set_title(f'No Binning (1×1)\nSize: {image_no_bin.shape}')
-        axes[0].axis('off')
-        plt.colorbar(im0, ax=axes[0], fraction=0.046, pad=0.04)
-
-        im1 = axes[1].imshow(image_bin2, cmap='gray')
-        axes[1].set_title(f'2×2 Binning\nSize: {image_bin2.shape}')
-        axes[1].axis('off')
-        plt.colorbar(im1, ax=axes[1], fraction=0.046, pad=0.04)
-
-        plt.suptitle('Effects of Pixel Binning (improves sensitivity, reduces resolution)', fontsize=14)
-        fig.tight_layout()
-        plt.show(block=False)
+    # Plot before/after for binning
+    fig, axes = plt.subplots(1, 2, figsize=(12, 5))
+    im0 = axes[0].imshow(image_no_bin, cmap='gray')
+    axes[0].set_title(f'No Binning (1×1)\nSize: {image_no_bin.shape}')
+    axes[0].axis('off')
+    plt.colorbar(im0, ax=axes[0], fraction=0.046, pad=0.04)
+    im1 = axes[1].imshow(image_bin, cmap='gray')
+    axes[1].set_title(f'{supported_bins[1]}x{supported_bins[1]} Binning\nSize: {image_bin.shape}')
+    axes[1].axis('off')
+    plt.colorbar(im1, ax=axes[1], fraction=0.046, pad=0.04)
+    plt.suptitle('Effects of Binning', fontsize=14)
+    fig.tight_layout()
+    plt.show(block=False)
 
     # Restore original binning
     camera.set_roi(bins=1)
 else:
     print('Only one binning mode supported. Skipping binning demo.')
 
-# %% Brightness Demonstration
+# ==============================================================================
+# BRIGHTNESS DEMONSTRATION
+# ==============================================================================
 
 if has_brightness:
     print('\n' + '=' * 30)
@@ -194,11 +217,11 @@ if has_brightness:
     # Change brightness
     print(f'Original brightness: {orig_brightness}')
     new_brightness = min(orig_brightness + 30, controls['Brightness']['MaxValue'])
-    camera.set_control_value(controls['Brightness']['ControlType'], new_brightness)
+    camera.set_control_value(asi.ASI_BRIGHTNESS, new_brightness)
     image_brightness = camera.capture()
 
     # Restore original brightness
-    camera.set_control_value(controls['Brightness']['ControlType'], orig_brightness)
+    camera.set_control_value(asi.ASI_BRIGHTNESS, orig_brightness)
 
     # Plot before/after for brightness
     fig, axes = plt.subplots(1, 2, figsize=(12, 5))
@@ -206,19 +229,19 @@ if has_brightness:
     axes[0].set_title(f'Original Brightness: {orig_brightness}')
     axes[0].axis('off')
     plt.colorbar(im0, ax=axes[0], fraction=0.046, pad=0.04)
-
     im1 = axes[1].imshow(image_brightness, cmap='gray')
     axes[1].set_title(f'Increased Brightness: {new_brightness}')
     axes[1].axis('off')
     plt.colorbar(im1, ax=axes[1], fraction=0.046, pad=0.04)
-
     plt.suptitle('Effects of Changing Brightness', fontsize=14)
     fig.tight_layout()
     plt.show(block=False)
 else:
     print('\nBrightness control not available on this camera. Skipping brightness demo.')
 
-# %% Image Mode Demonstration (MONO8 vs MONO16)
+# ==============================================================================
+# IMAGE MODE DEMONSTRATION (MONO8 vs MONO16)
+# ==============================================================================
 
 print('\n' + '=' * 30)
 print('IMAGE MODE DEMONSTRATION')
@@ -226,33 +249,35 @@ print('=' * 30)
 
 # Capture in 16-bit mode (current mode)
 image_16bit = camera.capture()
-print(f'16-bit image - dtype: {image_16bit.dtype}, range: {image_16bit.min()}-{image_16bit.max()}')
+print(f'Captured image in 16-bit mode, min: {image_16bit.min()}, max: {image_16bit.max()}')
 
 # Switch to 8-bit mode
 camera.set_image_type(asi.ASI_IMG_RAW8)
 image_8bit = camera.capture()
-print(f'8-bit image - dtype: {image_8bit.dtype}, range: {image_8bit.min()}-{image_8bit.max()}')
+print(f'Captured image in 8-bit mode, min: {image_8bit.min()}, max: {image_8bit.max()}')
 
 # Plot comparison of 8-bit vs 16-bit
 fig, axes = plt.subplots(1, 2, figsize=(12, 5))
 im0 = axes[0].imshow(image_8bit, cmap='gray')
-axes[0].set_title('8-bit Mode (RAW8)\nRange: 0-255')
+axes[0].set_title('8-bit Mode (RAW8)')
 axes[0].axis('off')
 plt.colorbar(im0, ax=axes[0], fraction=0.046, pad=0.04)
 
 im1 = axes[1].imshow(image_16bit, cmap='gray')
-axes[1].set_title('16-bit Mode (RAW16)\nRange: 0-65535')
+axes[1].set_title('16-bit Mode (RAW16)')
 axes[1].axis('off')
 plt.colorbar(im1, ax=axes[1], fraction=0.046, pad=0.04)
 
-plt.suptitle('8-bit vs 16-bit Image Modes (16-bit offers better dynamic range)', fontsize=14)
+plt.suptitle('8-bit vs 16-bit Image Modes', fontsize=14)
 fig.tight_layout()
 plt.show(block=False)
 
 # Restore to 16-bit mode
 camera.set_image_type(asi.ASI_IMG_RAW16)
 
-# %% Video Mode Demonstration
+# ==============================================================================
+# VIDEO MODE DEMONSTRATION
+# ==============================================================================
 
 print('\n' + '=' * 30)
 print('VIDEO MODE DEMONSTRATION')
@@ -260,44 +285,28 @@ print('=' * 30)
 
 print('Video mode advantages:')
 print('- Faster frame rates for live preview')
-print('- Better for auto-exposure/auto-gain algorithms')  
-print('- Continuous streaming capability')
+print('- Continuous streaming capability')  
 print('- Lower latency between captures')
+print('- Required for auto-exposure/auto-gain features')
 
 # Stop any ongoing exposure and start video mode
-try:
-    camera.stop_exposure()
-except:
-    pass
+camera.stop_exposure()
 
 print('\nStarting video capture mode...')
 camera.start_video_capture()
 
-# Enable auto-exposure and auto-gain for demonstration
-if 'Exposure' in controls and controls['Exposure']['IsAutoSupported']:
-    print('Enabling auto-exposure...')
-    camera.set_control_value(asi.ASI_EXPOSURE, controls['Exposure']['DefaultValue'], auto=True)
-
-if 'Gain' in controls and controls['Gain']['IsAutoSupported']:
-    print('Enabling auto-gain...')  
-    camera.set_control_value(asi.ASI_GAIN, controls['Gain']['DefaultValue'], auto=True)
-
 # Capture a series of video frames to show speed
 print('\nCapturing video frames...')
 frame_times = []
-num_frames = 5
+num_frames = 10
 
+start_time = time.time()
 for i in range(num_frames):
-    start_time = time.time()
     frame = camera.capture_video_frame()
-    end_time = time.time()
-    frame_time = end_time - start_time
-    frame_times.append(frame_time)
-    print(f'Frame {i+1}: {frame_time:.3f}s, size: {frame.shape}')
+end_time = time.time()
 
-avg_frame_time = sum(frame_times) / len(frame_times)
+avg_frame_time = (end_time - start_time) / num_frames
 fps = 1.0 / avg_frame_time
-print(f'\nAverage frame capture time: {avg_frame_time:.3f}s')
 print(f'Approximate frame rate: {fps:.1f} FPS')
 
 # Capture final video frame for display
@@ -306,36 +315,93 @@ final_frame = camera.capture_video_frame()
 # Stop video mode
 camera.stop_video_capture()
 
-# Show the final video frame
-fig, ax = plt.subplots(1, 1, figsize=(8, 6))
-im = ax.imshow(final_frame, cmap='gray')
-ax.set_title(f'Video Mode Frame\nAverage capture time: {avg_frame_time:.3f}s (~{fps:.1f} FPS)')
-ax.axis('off')
-plt.colorbar(im, ax=ax, fraction=0.046, pad=0.04)
-plt.tight_layout()
-plt.show(block=False)
+# ==============================================================================
+# AUTO-EXPOSURE DEMONSTRATION
+# ==============================================================================
 
-# %% Restore All Settings
+print('\n' + '=' * 30)
+print('AUTO-EXPOSURE DEMONSTRATION')
+print('=' * 30)
+
+print('Auto-exposure automatically adjusts exposure time based on image brightness.')
+print('This is useful for changing lighting conditions or when you want optimal exposure.')
+print('The auto-exposure logic is compiled into the ZWO SDK and cannot be adjusted here.')
+
+# Check if auto-exposure is supported
+if 'Exposure' in controls and controls['Exposure']['IsAutoSupported']:
+    print('\nAuto-exposure is supported on this camera.')
+
+    # Capture baseline image with manual exposure
+    print('\nCapturing image with manual exposure...')
+    manual_exposure_image = camera.capture()
+    manual_exposure_value = camera.get_control_value(asi.ASI_EXPOSURE)[0]
+
+    # Enable auto-exposure (requires video mode)
+    print('Enabling auto-exposure...')
+    camera.start_video_capture()
+    camera.set_control_value(asi.ASI_EXPOSURE, controls['Exposure']['DefaultValue'], auto=True)
+
+    # Capture several frames to see the adjustment process
+    auto_exposure_values = []
+    for i in range(10):
+        frame = camera.capture_video_frame()
+        current_exposure = camera.get_control_value(asi.ASI_EXPOSURE)[0]
+        auto_exposure_values.append(current_exposure)
+        print(f'Auto-exposure frame {i+1}: {current_exposure} μs')
+    time.sleep(2)  # Allow time for auto-exposure to finalize in case it hadn't yet
+
+    # Capture final auto-exposed image
+    auto_exposure_image = camera.capture_video_frame()
+    final_auto_exposure = camera.get_control_value(asi.ASI_EXPOSURE)[0]
+
+    # Stop video mode
+    camera.stop_video_capture()
+
+    # Disable auto-exposure and restore manual control
+    camera.set_control_value(asi.ASI_EXPOSURE, DEFAULT_EXPOSURE, auto=False)
+
+    # Show comparison
+    print('\nComparison:')
+    print(f'  Manual exposure: {manual_exposure_value} μs')
+    print(f'  Auto-exposure final: {final_auto_exposure} μs')
+
+    # Plot before/after for auto-exposure
+    fig, axes = plt.subplots(1, 2, figsize=(12, 5))
+    im0 = axes[0].imshow(manual_exposure_image, cmap='gray')
+    axes[0].set_title(f'Manual Exposure\n{manual_exposure_value} μs')
+    axes[0].axis('off')
+    plt.colorbar(im0, ax=axes[0], fraction=0.046, pad=0.04)
+    im1 = axes[1].imshow(auto_exposure_image, cmap='gray')
+    axes[1].set_title(f'Auto-Exposure\n{final_auto_exposure} μs')
+    axes[1].axis('off')
+    plt.colorbar(im1, ax=axes[1], fraction=0.046, pad=0.04)
+    plt.suptitle('Manual vs Auto-Exposure Comparison', fontsize=14)
+    plt.tight_layout()
+    plt.show(block=False)
+
+else:
+    print('\nAuto-exposure is not supported on this camera. Skipping auto-exposure demo.')
+
+# ==============================================================================
+# RESTORE ALL SETTINGS
+# ==============================================================================
 
 print('\n' + '=' * 30)
 print('RESTORING ORIGINAL SETTINGS')
 print('=' * 30)
 
 # Restore all original settings
-camera.set_control_value(controls['Exposure']['ControlType'], orig_exposure)
-camera.set_control_value(controls['Gain']['ControlType'], orig_gain)
+camera.set_control_value(asi.ASI_EXPOSURE, orig_exposure)
+camera.set_control_value(asi.ASI_GAIN, orig_gain)
 
 if has_gamma:
-    camera.set_control_value(controls['Gamma']['ControlType'], orig_gamma)
+    camera.set_control_value(asi.ASI_GAMMA, orig_gamma)
 
 if has_brightness:
-    camera.set_control_value(controls['Brightness']['ControlType'], orig_brightness)
+    camera.set_control_value(asi.ASI_BRIGHTNESS, orig_brightness)
 
 # Restore original ROI
-start_x, start_y, width, height = orig_roi
-camera.set_roi(start_x=start_x, start_y=start_y, width=width, height=height)
+camera.set_roi(start_x=orig_roi[0], start_y=orig_roi[1], width=orig_roi[2], height=orig_roi[3])
 
 print('All settings have been restored to their original values.')
 print('\nAdvanced demo complete!')
-print('Close the camera when done.')
-# Note: Camera will be automatically closed when the script ends

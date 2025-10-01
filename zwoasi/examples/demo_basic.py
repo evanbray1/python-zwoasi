@@ -13,6 +13,8 @@ Requires matplotlib for plotting.
 import os
 import sys
 import matplotlib.pyplot as plt
+from matplotlib import use
+use('TkAgg')  # Might need to be changed depending on your system
 
 # Since this demo file is located within the repository itself, we have a try statement to determine 
 # how to import the zwoasi module.
@@ -37,7 +39,9 @@ if SDK_PATH is None:
 
 asi.init(SDK_PATH)
 
-# %% Camera Initialization
+# ==============================================================================
+# CAMERA INITIALIZATION
+# ==============================================================================
 
 # Close any existing plots
 plt.close('all')
@@ -49,8 +53,7 @@ if not cameras:
 else:
     print(f'Found {len(cameras)} camera(s): {cameras}')
 
-camera_id = 0
-camera = asi.Camera(camera_id)
+camera = asi.Camera(0)  # Connect to the first camera
 
 # Set the camera to RAW16 mode for better dynamic range
 camera.set_image_type(asi.ASI_IMG_RAW16)
@@ -58,15 +61,33 @@ camera.set_image_type(asi.ASI_IMG_RAW16)
 # Print basic camera information
 info = camera.get_camera_property()
 print('\nCamera Info:')
-for k, v in info.items():
-    print(f'  {k}: {v}')
+for key, value in info.items():
+    print(f'  {key}: {value}')
 
-# %% Store Original Settings
+# ==============================================================================
+# DEFAULT CAMERA SETTINGS (MODIFY AS NEEDED)
+# ==============================================================================
 
-# Get current camera control values
-controls = camera.get_controls()
-orig_exposure = camera.get_control_value(controls['Exposure']['ControlType'])[0]
-orig_gain = camera.get_control_value(controls['Gain']['ControlType'])[0]
+# Set default exposure and gain values for consistent demo behavior
+# Modify these values based on your camera and lighting conditions
+DEFAULT_EXPOSURE = 320  # microseconds 
+DEFAULT_GAIN = 0        # gain value 
+
+print('\nSetting default camera parameters for demo...')
+print(f'  Setting exposure to: {DEFAULT_EXPOSURE} μs')
+print(f'  Setting gain to: {DEFAULT_GAIN}')
+
+# Apply default settings
+camera.set_control_value(asi.ASI_EXPOSURE, DEFAULT_EXPOSURE)
+camera.set_control_value(asi.ASI_GAIN, DEFAULT_GAIN)
+
+# ==============================================================================
+# STORE ORIGINAL SETTINGS
+# ==============================================================================
+
+# Get current camera control values using direct constants
+orig_exposure = camera.get_control_value(asi.ASI_EXPOSURE)[0]
+orig_gain = camera.get_control_value(asi.ASI_GAIN)[0]
 orig_roi = camera.get_roi()
 
 print('\nOriginal Settings:')
@@ -74,24 +95,28 @@ print(f'  Exposure: {orig_exposure}')
 print(f'  Gain: {orig_gain}')
 print(f'  ROI: {orig_roi}')
 
-# %% Baseline Image Capture
+# ==============================================================================
+# BASELINE IMAGE CAPTURE
+# ==============================================================================
 
 # Capture baseline image with original settings
 print('\nCapturing baseline image...')
 image_original = camera.capture()
 
-# %% Exposure Demonstration
+# ==============================================================================
+# EXPOSURE DEMONSTRATION
+# ==============================================================================
 
 print('\nDemonstrating exposure change...')
 print(f'Original exposure: {orig_exposure}')
 
 # Change exposure to 10% of original (or minimum 1000 microseconds)
 new_exposure = max(int(orig_exposure * 0.1), 1000)
-camera.set_control_value(controls['Exposure']['ControlType'], new_exposure)
+camera.set_control_value(asi.ASI_EXPOSURE, new_exposure)
 image_exposure = camera.capture()
 
 # Restore original exposure
-camera.set_control_value(controls['Exposure']['ControlType'], orig_exposure)
+camera.set_control_value(asi.ASI_EXPOSURE, orig_exposure)
 
 # Plot before/after for exposure
 fig, axes = plt.subplots(1, 2, figsize=(12, 5))
@@ -99,29 +124,28 @@ im0 = axes[0].imshow(image_original, cmap='gray')
 axes[0].set_title(f'Original Exposure: {orig_exposure} μs')
 axes[0].axis('off')
 plt.colorbar(im0, ax=axes[0], fraction=0.046, pad=0.04)
-
 im1 = axes[1].imshow(image_exposure, cmap='gray')
-axes[1].set_title(f'Reduced Exposure: {new_exposure} μs')
+axes[1].set_title(f'Updated Exposure: {new_exposure} μs')
 axes[1].axis('off')
 plt.colorbar(im1, ax=axes[1], fraction=0.046, pad=0.04)
-
 plt.suptitle('Effects of Changing Exposure', fontsize=14)
 fig.tight_layout()
 plt.show(block=False)
 
-# %% Gain Demonstration
+# ==============================================================================
+# GAIN DEMONSTRATION
+# ==============================================================================
 
 print('\nDemonstrating gain change...')
 print(f'Original gain: {orig_gain}')
 
 # Increase gain by 50 units (or to maximum if that would exceed it)
-max_gain = controls['Gain']['MaxValue']
-new_gain = min(orig_gain + 50, max_gain)
-camera.set_control_value(controls['Gain']['ControlType'], new_gain)
+new_gain = min(orig_gain + 50, camera.get_controls()['Gain']['MaxValue'])
+camera.set_control_value(asi.ASI_GAIN, new_gain)
 image_gain = camera.capture()
 
 # Restore original gain
-camera.set_control_value(controls['Gain']['ControlType'], orig_gain)
+camera.set_control_value(asi.ASI_GAIN, orig_gain)
 
 # Plot before/after for gain
 fig, axes = plt.subplots(1, 2, figsize=(12, 5))
@@ -129,17 +153,17 @@ im0 = axes[0].imshow(image_original, cmap='gray')
 axes[0].set_title(f'Original Gain: {orig_gain}')
 axes[0].axis('off')
 plt.colorbar(im0, ax=axes[0], fraction=0.046, pad=0.04)
-
 im1 = axes[1].imshow(image_gain, cmap='gray')
 axes[1].set_title(f'Increased Gain: {new_gain}')
 axes[1].axis('off')
 plt.colorbar(im1, ax=axes[1], fraction=0.046, pad=0.04)
-
 plt.suptitle('Effects of Changing Gain', fontsize=14)
 fig.tight_layout()
 plt.show(block=False)
 
-# %% Region of Interest (ROI) Demonstration
+# ==============================================================================
+# REGION OF INTEREST (ROI) DEMONSTRATION
+# ==============================================================================
 
 print('\nDemonstrating ROI change...')
 print(f'Original ROI: {orig_roi}')
@@ -164,18 +188,17 @@ im0 = axes[0].imshow(image_original, cmap='gray')
 axes[0].set_title(f'Full Frame: {width}×{height}')
 axes[0].axis('off')
 plt.colorbar(im0, ax=axes[0], fraction=0.046, pad=0.04)
-
 im1 = axes[1].imshow(image_roi, cmap='gray')
 axes[1].set_title(f'ROI: {new_width}×{new_height}')
 axes[1].axis('off')
 plt.colorbar(im1, ax=axes[1], fraction=0.046, pad=0.04)
-
 plt.suptitle('Effects of Changing Region of Interest (ROI)', fontsize=14)
 fig.tight_layout()
 plt.show(block=False)
 
-# %% Cleanup
+# ==============================================================================
+# CLEANUP
+# ==============================================================================
 
 print('\nDemo complete. All settings have been restored to original values.')
-print('Close the camera when done.')
-# Note: Camera will be automatically closed when the script ends
+print('Camera will automatically close when the script ends.')
