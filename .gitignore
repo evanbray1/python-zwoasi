@@ -39,7 +39,5 @@ nosetests.xml
 
 !zwoasi/bin
 
-
 # PyCharm
-#   User-specific stuff:
 .idea/
