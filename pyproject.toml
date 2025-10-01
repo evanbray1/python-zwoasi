@@ -22,6 +22,9 @@ dynamic = ["version"]
 requires-python = ">=3.7"
 dependencies = ["numpy>=1.7"]
 
+[project.optional-dependencies]
+examples = ["astropy", "matplotlib"]
+
 [project.urls]
 Homepage = "https://github.com/python-zwoasi/python-zwoasi"
 

@@ -12,3 +12,4 @@ Contributors
 - Matt Phair <mphair@plexium.com>
 - James Noss <jnoss@stsci.edu>
 - Jose I Romero <jose.cyborg@gmail.com>
+- Evan Bray <bray.evanp@gmail.com>

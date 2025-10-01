@@ -1,3 +1,3 @@
-include *.rst LICENSE \
-	zwoasi/examples/zwoasi_demo.py \
-	zwoasi/examples/binning_demo.py
+include *.rst LICENSE
+include zwoasi/examples/demo_basic.py
+include zwoasi/examples/demo_advanced.py
