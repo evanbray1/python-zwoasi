@@ -6,41 +6,15 @@ This script demonstrates:
 - Changing gamma, binning, brightness, and image modes (MONO8 vs MONO16)
 - Using video mode and demonstrating its advantages
 - Auto-exposure functionality and comparison with manual exposure
-- Capturing and plotting before/after images for each change (side-by-side with colorbars)
 
-Run this script from an IDE. Requires the ZWO ASI SDK shared library and a connected camera.
-Requires matplotlib for plotting.
+Recommended to run this script from an IDE.
 """
 
-import os
-import sys
 import matplotlib.pyplot as plt
 import time
+import zwoasi as asi
 from matplotlib import use
 use('TkAgg')  # Might need to be changed depending on your system
-
-# Since this demo file is located within the repository itself, we have a try statement to determine 
-# how to import the zwoasi module.
-try:
-    import zwoasi as asi
-except ImportError:
-    # Add the parent directory to sys.path and THEN try importing the zwoasi module
-    sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
-    import zwoasi as asi
-
-# Set path to ASICamera2.dll/.so/.dylib if not set in environment
-SDK_PATH = os.environ.get('ZWO_ASI_LIB', None)
-if SDK_PATH is None:
-    # Check for the DLL in the lib subdirectory of the zwoasi package
-    lib_path = os.path.join(os.path.dirname(asi.__file__), 'lib', 'ASICamera2.dll')
-    if os.path.exists(lib_path):
-        SDK_PATH = lib_path
-    else:
-        print('ASI SDK library not found. Please set ZWO_ASI_LIB environment variable.')
-        print('Alternatively, place ASICamera2.dll in the zwoasi/lib/ directory.')
-        sys.exit(1)
-
-asi.init(SDK_PATH)
 
 # ==============================================================================
 # CAMERA INITIALIZATION AND DETAILED SPECIFICATIONS
@@ -50,6 +24,7 @@ asi.init(SDK_PATH)
 plt.close('all')
 
 # Find and connect to the first available camera
+asi.init()
 cameras = asi.list_cameras()
 if not cameras:
     raise RuntimeError('No ZWO ASI cameras found.')
