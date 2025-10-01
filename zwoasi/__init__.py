@@ -1205,7 +1205,7 @@ def init(library_file=None):
         # First try to find the library in the package directory
         module_path = os.path.dirname(os.path.abspath(__file__))
         lib_path = os.path.join(module_path, 'lib', 'ASICamera2.dll')
-        
+
         if os.path.isfile(lib_path):
             library_file = lib_path
         else:
