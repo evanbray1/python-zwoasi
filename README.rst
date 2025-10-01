@@ -19,21 +19,25 @@ Quickstart
 	- Common modules such as `numpy`, `Pillow`, `astropy`
 
 2. **Install python-zwoasi:**
-	::
-		pip install .
+
+   .. code-block:: bash
+
+      pip install .
 
 3. **Set up the SDK library:**
 	- Set the `ZWO_ASI_LIB` environment variable to the path of your ASICamera2.dll/.so/.dylib, or pass it as an argument to `asi.init()`.
 
 4. **Basic usage:**
-	::
-		import zwoasi as asi
-		asi.init() 
-		cameras = asi.list_cameras()
-		if not cameras:
-			 raise RuntimeError('No cameras found')
-		camera = asi.Camera(0)
-		img = camera.capture()
+
+   .. code-block:: python
+
+      import zwoasi as asi
+      asi.init() 
+      cameras = asi.list_cameras()
+      if not cameras:
+          raise RuntimeError('No cameras found')
+      camera = asi.Camera(0)
+      img = camera.capture()
 
 5. **Try the example scripts:**
 	- `examples/demo_basic.py` - Minimal example showing most commonly-used features
