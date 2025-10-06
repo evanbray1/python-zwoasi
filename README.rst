@@ -7,7 +7,7 @@ Features
 --------
 - Simple, object-oriented API
 - Capture images and video, adjust common parameters (exposure, gain, gamma, ROI, etc.)
-- Clear documentation and step-by-step basic/advanced demos.
+- Clear documentation with step-by-step basic/advanced demos.
 - Advanced features such as video mode, auto-exposure, and buffer optimization. 
 
 Quickstart
