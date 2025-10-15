@@ -14,7 +14,7 @@
 - **Build/install:**
   - Use `pip install .` from the repo root (uses `setuptools`, see `setup.py`, `pyproject.toml`).
 - **Running examples:**
-  - Requires ZWO ASI SDK shared library (Windows x64 DLL included in `zwoasi/lib/`).
+  - Requires ZWO ASI SDK shared library (Windows x64 DLL included in `zwoasi/`).
   - Set path via `ZWO_ASI_LIB` environment variable or use auto-detection.
   - **New demo progression:** `demo_basic.py` → `demo_advanced.py` for comprehensive learning.
   - **Interactive features:** All demos use matplotlib with live plotting and user prompts.
