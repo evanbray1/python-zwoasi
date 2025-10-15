@@ -25,6 +25,7 @@ plt.close('all')
 
 # Find and connect to the first available camera
 asi.init()
+# asi.init('/path/to/ASICamera2.dll')  # Optionally specify the path to the DLL if it's not in system PATH
 cameras = asi.list_cameras()
 if not cameras:
     raise RuntimeError('No ZWO ASI cameras found.')

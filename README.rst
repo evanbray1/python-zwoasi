@@ -14,7 +14,7 @@ Quickstart
 ----------
 1. **Install dependencies:**
 	- Requires the ZWO ASI SDK 
-		- Windows x64 is included here and attempts to be used automatically. Other operating systems must download and install from ZWO's website
+		- V1.39 of the Windows SDK is included here for reference, in case the user doesn't already have it installed in a system-level path. 
 	- Python 3.6+
 	- Common modules such as `numpy`, `Pillow`, `astropy`
 

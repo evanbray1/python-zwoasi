@@ -4,22 +4,16 @@ Bare minimum ZWO ASI camera demo
 Assumes ZWO_ASI_LIB environment variable is already set.
 Demonstrates basic camera control with minimal overhead.
 """
-#%%
+
 import os
 import zwoasi as asi
 import matplotlib.pyplot as plt
 from matplotlib import use
-
 use('QtAgg')  # Set an interactive backend. Might need to be changed depending on your system
-
-# # Set the path to the ZWO ASI SDK (lib folder is in parent directory)
-# lib_path = os.path.join(os.path.dirname(__file__), '..', 'lib')
-# lib_path = os.path.abspath(lib_path)  # Convert to absolute path for clarity
-# asi.set_lib_path(lib_path)
-
 
 # Initialize SDK
 asi.init()
+# asi.init('/path/to/ASICamera2.dll')  # Optionally specify the path to the DLL if it's not in system PATH
 
 # Connect to first camera and set to 16-bit mode
 camera = asi.Camera(0)
