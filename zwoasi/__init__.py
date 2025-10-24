@@ -12,6 +12,7 @@ import numpy as np
 import sys
 import time
 import traceback
+from astropy.io import fits
 
 __author__ = 'Steve Marple'
 __version__ = '0.2.0'
@@ -1058,10 +1059,6 @@ class Camera(object):
         img = img.reshape(shape)
 
         if filename is not None:
-            try:
-                from astropy.io import fits
-            except ImportError:
-                raise ImportError('astropy is required to save images as FITS files.')
             fits.writeto(filename, img, overwrite=True)
             logger.debug('wrote %s', filename)
 
