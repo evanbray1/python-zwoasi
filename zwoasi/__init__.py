@@ -8,7 +8,6 @@ conditions specifically from the SDK C library are indicated by errors of type :
 import ctypes as c
 from ctypes.util import find_library
 import logging
-import os
 import numpy as np
 import sys
 import time
