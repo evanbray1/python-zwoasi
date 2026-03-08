@@ -804,6 +804,115 @@ class Camera(object):
             logger.debug(traceback.format_exc())
             raise
 
+    # ------------------------------------------------------------------
+    # Convenience methods for common controls
+    # ------------------------------------------------------------------
+
+    def set_exposure(self, value_us):
+        """Set the exposure time.
+
+        Parameters
+        ----------
+        value_us : int
+            Exposure time in microseconds.
+        """
+        self.set_control_value(ASI_EXPOSURE, int(value_us))
+
+    def get_exposure(self):
+        """Return the current exposure time in microseconds.
+
+        Returns
+        -------
+        int
+            Exposure time in microseconds.
+        """
+        return self.get_control_value(ASI_EXPOSURE)[0]
+
+    def set_gain(self, value):
+        """Set the camera gain.
+
+        Parameters
+        ----------
+        value : int
+            Gain value (valid range is camera-dependent).
+        """
+        self.set_control_value(ASI_GAIN, int(value))
+
+    def get_gain(self):
+        """Return the current gain value.
+
+        Returns
+        -------
+        int
+            Current gain setting.
+        """
+        return self.get_control_value(ASI_GAIN)[0]
+
+    def set_brightness(self, value):
+        """Set the brightness (offset) value.
+
+        Parameters
+        ----------
+        value : int
+            Brightness value (valid range is camera-dependent).
+        """
+        self.set_control_value(ASI_BRIGHTNESS, int(value))
+
+    def get_brightness(self):
+        """Return the current brightness (offset) value.
+
+        Returns
+        -------
+        int
+            Current brightness setting.
+        """
+        return self.get_control_value(ASI_BRIGHTNESS)[0]
+
+    def get_temperature(self):
+        """Return the sensor temperature in degrees Celsius.
+
+        The ZWO SDK reports temperature as 10 * degrees C; this method
+        converts to Celsius automatically.
+
+        Returns
+        -------
+        float
+            Sensor temperature in \u00b0C.
+        """
+        return self.get_control_value(ASI_TEMPERATURE)[0] / 10.0
+
+    def set_cooler(self, enabled, target_temp=None):
+        """Enable or disable the TEC cooler.
+
+        Parameters
+        ----------
+        enabled : bool
+            True to turn the cooler on, False to turn it off.
+        target_temp : int or None, optional
+            Target sensor temperature in °C.  Applied only when
+            ``enabled=True`` and a value is provided.
+        """
+        self.set_control_value(ASI_COOLER_ON, int(bool(enabled)))
+        if enabled and target_temp is not None:
+            self.set_control_value(ASI_TARGET_TEMP, int(target_temp))
+
+    def get_cooler(self):
+        """Return whether the cooler is on and the target temperature.
+
+        Returns
+        -------
+        dict
+            ``{'enabled': bool, 'target_temp': int}``
+        """
+        return {
+            'enabled': bool(self.get_control_value(ASI_COOLER_ON)[0]),
+            'target_temp': self.get_control_value(ASI_TARGET_TEMP)[0],
+        }
+    
+    # ------------------------------------------------------------------
+    # Original, more explicit methods for all controls and settings
+    # ------------------------------------------------------------------
+
     def __del__(self):
         self.close()
 

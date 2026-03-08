@@ -1,8 +1,11 @@
 """
-Bare minimum ZWO ASI camera demo
+Bare minimum ZWO ASI camera demo (user-friendly syntax)
+
+This demo uses the convenient set_exposure(), set_gain(), etc. methods
+rather than the lower-level set_control_value(ASI_*, value) calls.
+See demo_advanced.py for the original, more explicit syntax.
 
 Assumes ZWO_ASI_LIB environment variable is already set.
-Demonstrates basic camera control with minimal overhead.
 """
 
 import os
@@ -22,9 +25,9 @@ camera.set_image_type(asi.ASI_IMG_RAW16)
 # Capture baseline image
 image_baseline = camera.capture()
 
-# Change exposure, gain, and ROI
-camera.set_control_value(asi.ASI_EXPOSURE, 1000)  # microseconds
-camera.set_control_value(asi.ASI_GAIN, 50)
+# Change exposure, gain, and ROI using the user-friendly convenience methods
+camera.set_exposure(1000)  # microseconds
+camera.set_gain(50)
 camera.set_roi(start_x=100, start_y=100, width=200, height=200)
 image_final = camera.capture()
 

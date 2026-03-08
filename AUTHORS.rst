@@ -1,7 +1,7 @@
 Credits
 =======
 
-"zwoasi" is written and maintained by Steve Marple.
+"zwoasi" was originally written by Steve Marple.
 
 
 Contributors

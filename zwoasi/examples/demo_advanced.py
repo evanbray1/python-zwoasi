@@ -1,11 +1,17 @@
 """
 Advanced demo script for ZWO ASI camera control using python-zwoasi.
 
+This script uses the original set_control_value(ASI_*, value) syntax
+throughout, which gives full access to every SDK control and the auto
+flag.  For the simpler set_exposure() / set_gain() convenience methods,
+see demo_basic.py.
+
 This script demonstrates:
-- Printing detailed camera specifications  
+- Printing detailed camera specifications
 - Changing gamma, binning, brightness, and image modes (MONO8 vs MONO16)
 - Using video mode and demonstrating its advantages
 - Auto-exposure functionality and comparison with manual exposure
+- Cooling / temperature setpoint control (if supported)
 
 Recommended to run this script from an IDE.
 """
@@ -357,6 +363,48 @@ if 'Exposure' in controls and controls['Exposure']['IsAutoSupported']:
 
 else:
     print('\nAuto-exposure is not supported on this camera. Skipping auto-exposure demo.')
+
+# ==============================================================================
+# COOLING / TEMPERATURE SETPOINT (if supported)
+# ==============================================================================
+
+print('\n' + '=' * 30)
+print('COOLING DEMONSTRATION')
+print('=' * 30)
+
+is_cooler_cam = info.get('IsCoolerCam', False)
+if is_cooler_cam:
+    # NOTE: Convenience methods also exist for cooler control:
+    #   camera.set_cooler(True, target_temp=-10)
+    #   camera.get_cooler()        -> {'enabled': bool, 'target_temp': int}
+    #   camera.get_temperature()   -> float (°C)
+    #   camera.set_cooler(False) to disable
+    # This demo uses the original set_control_value() syntax for consistency.
+
+    # Read the current sensor temperature
+    current_temp = camera.get_control_value(asi.ASI_TEMPERATURE)[0] / 10.0
+    print(f'Current sensor temperature: {current_temp:.1f} °C')
+
+    # Enable the cooler and set a target temperature
+    target_temp = -10  # degrees C
+    print(f'Enabling cooler with target temperature: {target_temp} °C')
+    camera.set_control_value(asi.ASI_COOLER_ON, 1)
+    camera.set_control_value(asi.ASI_TARGET_TEMP, target_temp)
+
+    # Monitor for a few seconds
+    print('Monitoring temperature (5 readings, ~1 s apart)...')
+    for i in range(5):
+        time.sleep(1)
+        temp_now = camera.get_control_value(asi.ASI_TEMPERATURE)[0] / 10.0
+        cooler_power = camera.get_control_value(asi.ASI_COOLER_POWER_PERC)[0]
+        print(f'  Reading {i+1}: {temp_now:.1f} °C  (cooler power {cooler_power}%)')
+
+    # Disable the cooler
+    print('Disabling cooler...')
+    camera.set_control_value(asi.ASI_COOLER_ON, 0)
+    print('Cooler disabled.')
+else:
+    print('This camera does not have a TEC cooler. Skipping cooling demo.')
 
 # ==============================================================================
 # RESTORE ALL SETTINGS

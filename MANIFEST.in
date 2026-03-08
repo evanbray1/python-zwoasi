@@ -1,3 +1,0 @@
-include *.rst LICENSE
-include zwoasi/examples/demo_basic.py
-include zwoasi/examples/demo_advanced.py
