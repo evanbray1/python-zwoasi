@@ -1,7 +1,9 @@
 python-zwoasi
 =============
 
-Python wrapper for the ZWO ASI v2 camera SDK, enabling control and image capture from ZWO USB cameras.
+Python wrapper for the ZWO ASI v2 camera SDK, enabling control and image capture from ZWO USB cameras. This version includes a much more user-friendly wrapper, and improved documentation across the board. 
+
+For a version of the manufacturer's repo with ONLY improved documentation (no updated functionality), refer to the branch titled "Improved-documentation-only".
 
 Features
 --------
